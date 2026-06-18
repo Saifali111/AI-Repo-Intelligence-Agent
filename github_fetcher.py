@@ -78,17 +78,21 @@ def get_recent_workflow_runs():
     
     result = []
     for run in runs:
+        # filter to only PRs from the main repo not forks
+        main_repo_prs = [
+            pr for pr in run["pull_requests"]
+            if pr["head"]["repo"]["id"] == pr["base"]["repo"]["id"]]
+        
         result.append({
             "name": run["name"],
             "status": run["status"],
             "conclusion": run["conclusion"],
             "branch": run["head_branch"],
             "created_at": run["created_at"],
-            "pr_number": run["pull_requests"][0]["number"] if run["pull_requests"] else None,
-            "actor": run["actor"]["login"],  # who triggered this run
+            "actor": run["actor"]["login"],
+            "pr_number": main_repo_prs[0]["number"] if main_repo_prs else None,
+            "commit_message": run["head_commit"]["message"].split("\n")[0] if run.get("head_commit") else None,
         })
-
-    # print(len(result))
     return result
 
 if __name__ == "__main__":
@@ -106,5 +110,6 @@ if __name__ == "__main__":
     runs = get_recent_workflow_runs()
     for run in runs:
         status = run["conclusion"] or run["status"]
-        pr = f"PR #{run['pr_number']}" if run["pr_number"] else "no PR linked"
-        print(f"  {run['name']} | {status} | {pr} | by @{run['actor']} | branch: {run['branch']}")
+        pr = f"PR #{run['pr_number']}" if run["pr_number"] else "branch merge"
+        commit = run["commit_message"][:100] if run["commit_message"] else ""
+        print(f"  {run['name']} | {status} | {pr} | {commit[:50]} | by @{run['actor']}")

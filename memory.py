@@ -22,6 +22,7 @@ def generate_embedding(text):
         }
     )
     result = response.json()
+    # print(result)
     return result["embedding"]
 
 def store_briefing(raw_summary, briefing_text):
