@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from github_fetcher import get_open_prs, get_open_issues, get_recent_workflow_runs, days_old
 from memory import store_briefing, retrieve_similar_briefings
+from slack_sender import send_to_slack
 
 load_dotenv()
 
@@ -112,4 +113,6 @@ if __name__ == "__main__":
     print("\n" + "="*50)
     print("DEVPULSE MORNING BRIEFING")
     print("="*50)
-    print(briefing)
+    # print(briefing)
+
+    send_to_slack(briefing)
