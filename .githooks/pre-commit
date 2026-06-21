@@ -1,0 +1,8 @@
+#!/bin/bash
+if git diff --cached --name-only | grep -q "^\.env$"; then
+    echo ""
+    echo "❌ BLOCKED: .env is staged for commit."
+    echo "Run: git restore --staged .env"
+    echo ""
+    exit 1
+fi

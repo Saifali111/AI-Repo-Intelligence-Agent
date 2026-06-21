@@ -20,6 +20,49 @@ def days_old(date_string):
     now = datetime.now(timezone.utc)
     return (now - created).days
 
+def get_issue_comments(issue_number):
+    url = f"{BASE_URL}/repos/{REPO}/issues/{issue_number}/comments"
+    response = requests.get(url, headers=HEADERS, params={"per_page": 10})
+    comments = response.json()
+    
+    result = []
+    for comment in comments:
+        result.append({
+            "author": comment["user"]["login"],
+            "body": comment["body"][:200],  # truncate long comments
+            "created_at": comment["created_at"]
+        })
+    return result
+
+def get_issue_timeline(issue_number):
+    url = f"{BASE_URL}/repos/{REPO}/issues/{issue_number}/timeline"
+    response = requests.get(url, headers=HEADERS, params={"per_page": 20})
+    events = response.json()
+    
+    result = []
+    for event in events:
+        event_type = event.get("event", "unknown")
+        if event_type in ["labeled", "unlabeled", "assigned", "closed", "reopened", "cross-referenced"]:
+            result.append({
+                "event": event_type,
+                "created_at": event.get("created_at", "")
+            })
+    return result
+
+def get_pr_reviews(pr_number):
+    url = f"{BASE_URL}/repos/{REPO}/pulls/{pr_number}/reviews"
+    response = requests.get(url, headers=HEADERS, params={"per_page": 10})
+    reviews = response.json()
+    
+    result = []
+    for review in reviews:
+        result.append({
+            "author": review["user"]["login"],
+            "state": review["state"],  # APPROVED, CHANGES_REQUESTED, COMMENTED
+            "body": review["body"][:200] if review["body"] else ""
+        })
+    return result
+
 def get_open_prs():
     url = f"{BASE_URL}/repos/{REPO}/pulls"
     params = {"state": "open", "per_page": 20, "sort": "updated", "direction": "asc"}

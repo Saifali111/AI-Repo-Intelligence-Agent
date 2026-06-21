@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from github_fetcher import get_open_prs, get_open_issues, get_recent_workflow_runs, days_old
 from memory import store_briefing, retrieve_similar_briefings
 from slack_sender import send_to_slack
+from groq import Groq
 
 load_dotenv()
 
@@ -86,21 +87,20 @@ def generate_briefing():
         - No fluff
         - Present items in EXACTLY the order given"""
 
-    # Step 7: generate briefing
-    print("Generating briefing with llama3.2...")
-    response = requests.post(
-        "http://localhost:11434/api/chat",
-        json={
-            "model": "llama3.2",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
-            "stream": False
-        }
+    # Step 7: generate briefing using Groq
+    print("Generating briefing with Groq (Llama 3.3 70B)...")
+    from groq import Groq
+
+    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+    response = groq_client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
     )
 
-    result = response.json()
-    briefing = result["message"]["content"]
+    briefing = response.choices[0].message.content
 
     # Step 8: store today's briefing in memory for future retrieval
     print("Storing briefing in memory...")
