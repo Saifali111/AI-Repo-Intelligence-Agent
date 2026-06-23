@@ -16,7 +16,7 @@ from github_fetcher import (
     days_old
 )
 from memory import retrieve_similar_briefings, store_briefing
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
 
 load_dotenv()
 
@@ -70,11 +70,37 @@ tool_map = {
 llm = ChatGroq(model="llama-3.3-70b-versatile", api_key=os.getenv("GROQ_API_KEY"))
 llm_with_tools = llm.bind_tools(tools)
 
-def run_agentic_investigation(prompt, max_iterations=5, max_retries=2):
-    messages = [HumanMessage(content=prompt)]
+SYSTEM_PROMPT = """You are investigating a GitHub issue using the ReAct framework.
 
-    for i in range(max_iterations):
-        print(f"\n--- Iteration {i+1} ---")
+        For each step, you must follow this exact format:
+        Thought: [explain your reasoning about what to do next, 
+                including reflection on the previous observation if any]
+        Then call the appropriate tool.
+
+        After receiving a tool result (Observation), you MUST explicitly 
+        reflect on it in your next Thought before deciding the next action.
+        Only stop when your Thought concludes you have sufficient evidence 
+        to answer, then provide your final answer instead of calling a tool.
+
+        Grounding Rule: Verify that your thoughts are strictly supported by 
+        the actual observations. Do not claim a recurring pattern unless you 
+        see multiple separate historical occurrences of the problem.
+
+        Avoid repeating a tool call with a nearly identical query if 
+        you've already received that information. If a search returns 
+        the same result as before, move to a different tool or conclude 
+        your investigation instead of searching again.
+        """
+
+def run_agentic_investigation(prompt, max_iterations=10, max_retries=2):
+    messages = [
+        HumanMessage(content=SYSTEM_PROMPT + "\n\n" + prompt)
+    ]
+    iteration = 0
+
+    while iteration < max_iterations:
+        iteration += 1
+        print(f"\n--- Iteration {iteration} ---")
 
         response = None
         for retry in range(max_retries):
@@ -84,40 +110,41 @@ def run_agentic_investigation(prompt, max_iterations=5, max_retries=2):
             except Exception as e:
                 print(f"LLM call failed (attempt {retry+1}/{max_retries}): {e}")
                 if retry == max_retries - 1:
-                    return "Investigation incomplete after retries — generation error persisted."
+                    return "Investigation incomplete after retries."
+
+        # print the model's reasoning text (the "Thought") if present
+        if response.content:
+            print(f"Thought: {response.content}")
 
         messages.append(response)
 
         if not response.tool_calls:
             print("Agent finished investigating.")
             return response.content
-        else:
-            print(len(response.tool_calls))
 
         for tool_call in response.tool_calls:
             tool_name = tool_call["name"]
             tool_args = tool_call["args"]
-            print(f"Calling: {tool_name}({tool_args})")
+            print(f"Action: {tool_name}({tool_args})")
 
             try:
                 result = tool_map[tool_name].invoke(tool_args)
             except Exception as e:
                 result = f"Tool execution failed: {e}"
 
-            print(f"Result: {str(result)[:150]}...")
+            print(f"Observation: {str(result)[:150]}...")
 
             messages.append(ToolMessage(
                 content=str(result),
                 tool_call_id=tool_call["id"]
             ))
 
-    return "Investigation stopped after max iterations — agent did not converge."
+    return "Investigation stopped after max iterations."
 
 if __name__ == "__main__":
-    test_prompt = """Investigate GitHub issue #65512 (14 upvotes, open 771 days).
-        Check the comments first. Based on what you learn, decide whether to check 
-        the timeline, search past briefings, or check a specific PR's reviews if 
-        a PR number is mentioned. Stop when you have enough to give a clear final answer."""
+    test_prompt = """Investigate GitHub issue #94919 — App Router RSC render 
+        tree retained per request causing a server memory leak. Determine the 
+        root cause status and check if this is part of a recurring pattern."""
 
     final_answer = run_agentic_investigation(test_prompt)
     print("\n=== FINAL AGENT ANALYSIS ===")

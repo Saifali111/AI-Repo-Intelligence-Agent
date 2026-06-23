@@ -102,9 +102,27 @@ def generate_briefing():
 
     briefing = response.choices[0].message.content
 
-    # Step 8: store today's briefing in memory for future retrieval
-    print("Storing briefing in memory...")
-    store_briefing(raw_summary, briefing)
+    # Step 8a: store each entity SEPARATELY for precise future retrieval
+    print("Storing individual entities in memory...")
+
+    for issue in top_issues:
+        issue_raw = f"GitHub Issue #{issue['number']}: {issue['title']}"
+        issue_text = f"Issue #{issue['number']} ({issue['title']}) has been open for {days_old(issue['created_at'])} days with {issue['reactions']} upvotes and {issue['comments']} comments. Status: still unresolved as of this briefing."
+        store_briefing(issue_raw, issue_text, source_type="issue")
+
+    for pr in top_prs:
+        pr_raw = f"GitHub PR #{pr['number']}: {pr['title']}"
+        pr_text = f"PR #{pr['number']} ({pr['title']}) by @{pr['author']} has been open for {days_old(pr['created_at'])} days with no merge. Status: still stale as of this briefing."
+        store_briefing(pr_raw, pr_text, source_type="pr")
+
+    for run in critical_ci:
+        ci_raw = f"CI Failure: {run['name']} on {run['branch']}"
+        ci_text = f"Workflow {run['name']} failed/blocked on branch {run['branch']}, PR #{run['pr_number']}, commit: {run['commit_message']}, triggered by @{run['actor']}."
+        store_briefing(ci_raw, ci_text, source_type="ci_failure")
+
+    # Step 8b: also store the FULL briefing for general context
+    print("Storing full briefing in memory...")
+    store_briefing(raw_summary, briefing, source_type="briefing")
 
     return briefing
 

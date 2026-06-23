@@ -25,22 +25,23 @@ def generate_embedding(text):
     # print(result)
     return result["embedding"]
 
-def store_briefing(raw_summary, briefing_text):
-    print("Generating embedding for today's briefing...")
+def store_briefing(raw_summary, briefing_text, source_type=None):
+    print(f"Generating embedding for {source_type or 'briefing'}...")
     embedding = generate_embedding(raw_summary)
     
     conn = get_connection()
     cur = conn.cursor()
     
     cur.execute("""
-        INSERT INTO briefings (raw_summary, briefing_text, embedding)
-        VALUES (%s, %s, %s)
-    """, (raw_summary, briefing_text, embedding))
+        INSERT INTO briefings (raw_summary, briefing_text, embedding, source_type)
+        VALUES (%s, %s, %s, %s)
+    """, (raw_summary, briefing_text, embedding, source_type))
     
     conn.commit()
     cur.close()
     conn.close()
     print("Briefing stored in memory.")
+
 
 def retrieve_similar_briefings(query_text, limit=3):
     embedding = generate_embedding(query_text)
