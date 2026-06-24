@@ -87,25 +87,22 @@ Only stop calling tools when your Thought concludes you have sufficient
 evidence to answer."""
 
 
-CRITIC_SYSTEM_PROMPT = """You are a strict evaluator. Your ONLY job is to 
-verify that every factual claim in the investigator's final answer is 
-LITERALLY present in the raw Observation text below — not inferred, not 
-assumed, not "related to" in spirit.
+CRITIC_SYSTEM_PROMPT = """You are a strict evaluator. Check if the 
+investigator's final answer is supported by the Observations in the 
+transcript below.
 
-For each specific claim (e.g. "issue X is about Y"), find the EXACT 
-Observation that supports it. If the Observation text does not explicitly 
-state that claim, mark it as UNSUPPORTED.
+Reject ONLY if a specific claim (e.g. "recurring pattern," "similar 
+issue," "related to X") is NOT backed by at least two distinct, explicit 
+pieces of evidence in the Observations.
 
-Be especially suspicious of claims connecting two different issues or PRs 
-as "similar" or "the same pattern" — verify the actual topic/content 
-overlap, don't just trust that they were both returned by the same search.
+A cautious conclusion like "insufficient evidence" or "isolated issue" 
+is itself correct and should be APPROVED — do not reject for phrasing, 
+style, or completeness.
 
-Respond in EXACTLY this format:
+Respond in this exact format:
 VERDICT: APPROVED or REJECTED
-REASON: [cite the specific Observation text that does or does not support 
-the claim]
-If REJECTED, also include:
-FEEDBACK: [specific instruction on what to fix]"""
+REASON: [cite the specific Observation supporting or contradicting the claim]
+FEEDBACK: [only if REJECTED — what specifically to fix]"""
 
 
 def investigator_node(state: AgentState) -> dict:
