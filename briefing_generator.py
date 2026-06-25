@@ -124,6 +124,8 @@ def generate_briefing():
     print("Storing full briefing in memory...")
     store_briefing(raw_summary, briefing, source_type="briefing")
 
+    send_to_slack(briefing)
+
     return briefing
 
 if __name__ == "__main__":
@@ -131,6 +133,4 @@ if __name__ == "__main__":
     print("\n" + "="*50)
     print("DEVPULSE MORNING BRIEFING")
     print("="*50)
-    # print(briefing)
-
-    send_to_slack(briefing)
+    print(briefing)

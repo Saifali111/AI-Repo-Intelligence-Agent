@@ -1,13 +1,29 @@
+import os
 import psycopg2
 import requests
 import json
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Read from environment variables with safe local defaults.
+# This means:
+#   - running normally on your Mac (python memory.py) -> unchanged behavior
+#   - running inside Docker -> set DB_HOST / OLLAMA_HOST to host.docker.internal
+#   - running on Cloud Run later -> set these to wherever the DB/Ollama actually live
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", 5432))
+DB_NAME = os.getenv("DB_NAME", "devpulse")
+DB_USER = os.getenv("DB_USER", "saifali")
+
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 DB_CONFIG = {
-    "dbname": "devpulse",
-    "user": "saifali",
-    "host": "localhost",
-    "port": 5432
+    "dbname": DB_NAME,
+    "user": DB_USER,
+    "host": DB_HOST,
+    "port": DB_PORT
 }
 
 def get_connection():
@@ -15,14 +31,13 @@ def get_connection():
 
 def generate_embedding(text):
     response = requests.post(
-        "http://localhost:11434/api/embeddings",
+        f"{OLLAMA_HOST}/api/embeddings",
         json={
             "model": "nomic-embed-text",
             "prompt": text
         }
     )
     result = response.json()
-    # print(result)
     return result["embedding"]
 
 def store_briefing(raw_summary, briefing_text, source_type=None):
@@ -65,6 +80,7 @@ def retrieve_similar_briefings(query_text, limit=3):
 if __name__ == "__main__":
     # test storing a briefing
     print("Testing memory system...")
+    print(f"Connecting to DB at {DB_HOST}:{DB_PORT}, Ollama at {OLLAMA_HOST}")
     
     test_raw = "PR #28818 symlink pages 1745 days old. Issue #65512 14 upvotes concat performance bug."
     test_briefing = "NEEDS ATTENTION: PR #28818 is 1745 days old. Issue #65512 has 14 upvotes."
