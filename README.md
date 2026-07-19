@@ -25,12 +25,12 @@ The agent can:
 
 High-level workflow:
 
-GitHub Cron schedule (GitHub Actions)
-➡️ Secure API request with GCP OIDC Authentication
-➡️ FastAPI endpoint wakes up on GCP Cloud Run
-➡️ Vector search retrieves historical context from Cloud SQL (pgvector + Vertex AI)
-➡️ LangGraph multi-agent workflow (Investigator ReAct loop + Critic validation)
-➡️ Groq Llama 3.3 briefing generation
+GitHub Cron schedule (GitHub Actions)  
+➡️ Secure API request with GCP OIDC Authentication  
+➡️ FastAPI endpoint wakes up on GCP Cloud Run  
+➡️ Vector search retrieves historical context from Cloud SQL (pgvector + Vertex AI)  
+➡️ LangGraph multi-agent workflow (Investigator ReAct loop + Critic validation)  
+➡️ Groq Llama 3.3 briefing generation  
 ➡️ Deliver formatted briefing to Slack
 
 Core stack:
