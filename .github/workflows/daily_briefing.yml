@@ -1,0 +1,29 @@
+name: Trigger Daily Briefing
+
+on:
+  schedule:
+    - cron: '0 12 * * 1-5' # Runs Mon-Fri at 12:00 PM UTC (8:00 AM EST)
+  workflow_dispatch: # Allows triggering manually from the Actions tab
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate with Google
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Get Cloud Run ID Token
+        id: id-token
+        run: |
+          token=$(gcloud auth print-identity-token --audiences="https://devpulse-954749788670.us-central1.run.app")
+          echo "::add-mask::$token"
+          echo "token=$token" >> $GITHUB_OUTPUT
+
+      - name: Call DevPulse Briefing Endpoint
+        run: |
+          curl -X POST "https://devpulse-954749788670.us-central1.run.app/briefing/generate" \
+            -H "Authorization: Bearer ${{ steps.id-token.outputs.token }}" \
+            -H "Content-Length: 0"
