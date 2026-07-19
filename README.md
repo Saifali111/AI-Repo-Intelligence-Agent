@@ -23,6 +23,8 @@ The agent can:
 
 ## 🏗️ Architecture Overview
 
+![DevPulse Architecture](gcp_architecture.png)
+
 High-level workflow:
 
 GitHub Cron schedule (GitHub Actions)  
