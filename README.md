@@ -11,12 +11,13 @@ Engineering teams waste valuable time every morning checking dashboards, scrolli
 This system acts as an AI-powered repository monitor, gathering data daily and analyzing the most critical issues.
 
 The agent can:
-• Fetch and rank open issues, PRs, and CI workflow runs
-• Retrieve semantically similar past briefings and context using vector search
-• Run a deep multi-agent investigation (Investigator + Critic) on top items to analyze root causes
-• Generate a summarized, clean morning briefing using Groq (Llama 3.3)
-• Deliver the structured report directly to a Slack channel
-• Run securely on the cloud with automated triggers
+
+- Fetch and rank open issues, PRs, and CI workflow runs
+- Retrieve semantically similar past briefings and context using vector search
+- Run a deep multi-agent investigation (Investigator + Critic) on top items to analyze root causes
+- Generate a summarized, clean morning briefing using Groq (Llama 3.3)
+- Deliver the structured report directly to a Slack channel
+- Run securely on the cloud with automated triggers
 
 ---
 
@@ -33,41 +34,41 @@ GitHub Cron schedule (GitHub Actions)
 ➡️ Deliver formatted briefing to Slack
 
 Core stack:
-• **FastAPI** for HTTP API endpoints
-• **LangGraph** for multi-agent coordination
-• **PostgreSQL + pgvector** for database semantic memory
-• **Google Vertex AI** (`text-embedding-004`) for serverless embeddings
-• **Groq** (`llama-3.3-70b-versatile`) for quick, high-quality reasoning
-• **GitHub Actions** for secure scheduled triggering
-• **Docker + GCP Cloud Run** for containerized serverless hosting
+- **FastAPI** for HTTP API endpoints
+- **LangGraph** for multi-agent coordination
+- **PostgreSQL + pgvector** for database semantic memory
+- **Google Vertex AI** (`text-embedding-004`) for serverless embeddings
+- **Groq** (`llama-3.3-70b-versatile`) for quick, high-quality reasoning
+- **GitHub Actions** for secure scheduled triggering
+- **Docker + GCP Cloud Run** for containerized serverless hosting
 
 ---
 
 ## 🤖 Key Features
 
 ### 🔎 LangGraph Multi-Agent Deep Investigator
-• **Investigator Node**: Operates as a ReAct agent using tools to fetch issue timelines, comments, and PR reviews.
-• **Critic Node**: Evaluates the investigator's reasoning. If it lacks sufficient evidence (e.g., claiming a "recurring pattern" without at least 2 distinct historical examples), it rejects the answer.
-• **Episodic Memory Buffer**: On rejection, the critic's feedback is saved in a retry history list. The investigator uses this memory in the next iteration to avoid repeating mistakes.
+- **Investigator Node**: Operates as a ReAct agent using tools to fetch issue timelines, comments, and PR reviews.
+- **Critic Node**: Evaluates the investigator's reasoning. If it lacks sufficient evidence (e.g., claiming a "recurring pattern" without at least 2 distinct historical examples), it rejects the answer.
+- **Episodic Memory Buffer**: On rejection, the critic's feedback is saved in a retry history list. The investigator uses this memory in the next iteration to avoid repeating mistakes.
 
 ### 🧠 Semantic Memory Database
-• Ingests daily briefings, PR details, issues, and CI failures.
-• Generates embeddings using Google's serverless Vertex AI API.
-• Queries the Postgres database using the pgvector cosine distance operator (`<=>`) to fetch similar past situations.
+- Ingests daily briefings, PR details, issues, and CI failures.
+- Generates embeddings using Google's serverless Vertex AI API.
+- Queries the Postgres database using the pgvector cosine distance operator (`<=>`) to fetch similar past situations.
 
 ### 🛡️ Secure Serverless API
-• FastAPI backend built for production.
-• Access to the daily briefing trigger endpoint is restricted using IAM and token authorization.
-• Configuration is fully externalized to environment variables and secured via GCP Secret Manager.
+- FastAPI backend built for production.
+- Access to the daily briefing trigger endpoint is restricted using IAM and token authorization.
+- Configuration is fully externalized to environment variables and secured via GCP Secret Manager.
 
 ---
 
 ## 💡 Example Use Cases
 
 Automated briefings highlight:
-• **Critical CI Failures**: Highlighting blocked runs, branch name, commit message, and author.
-• **Stalest Open PRs**: Highlighting how many days they have been open and unmerged.
-• **Root Cause Deep Investigation**: E.g., *"Investigate issue #95015 (Turbopack crashes on Windows). Determine root cause status and check if this is part of a recurring pattern."*
+- **Critical CI Failures**: Highlighting blocked runs, branch name, commit message, and author.
+- **Stalest Open PRs**: Highlighting how many days they have been open and unmerged.
+- **Root Cause Deep Investigation**: E.g., *"Investigate issue #95015 (Turbopack crashes on Windows). Determine root cause status and check if this is part of a recurring pattern."*
 
 ---
 
@@ -94,12 +95,12 @@ devpulse/
 ## 🚀 Getting Started
 
 ### Prerequisites
-• Python 3.12+
-• PostgreSQL with `pgvector` extension installed
-• Groq API Key
-• GitHub Personal Access Token (PAT)
-• Slack Webhook URL
-• Google Cloud Platform account (with Vertex AI enabled)
+- Python 3.12+
+- PostgreSQL with `pgvector` extension installed
+- Groq API Key
+- GitHub Personal Access Token (PAT)
+- Slack Webhook URL
+- Google Cloud Platform account (with Vertex AI enabled)
 
 ### 🔧 Local Setup
 1. **Clone the repository**:
@@ -145,9 +146,9 @@ devpulse/
 
 ## 🔮 Future Improvements
 
-• Slack interactive Slash Commands (e.g. `/devpulse-investigate [issue_number]`).
-• Support for multiple repository monitoring configurations (Multi-tenancy).
-• A lightweight frontend dashboard to visualize historic briefings.
+- Slack interactive Slash Commands (e.g. `/devpulse-investigate [issue_number]`).
+- Support for multiple repository monitoring configurations (Multi-tenancy).
+- A lightweight frontend dashboard to visualize historic briefings.
 
 ---
 
