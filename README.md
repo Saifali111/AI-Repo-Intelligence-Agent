@@ -1,4 +1,4 @@
-# DevPulse: AI Engineering Intelligence Agent
+# 🚨 DevPulse: AI Engineering Intelligence Agent
 A production-ready AI agent that helps engineering teams automate repository monitoring, PR stale reviews, and critical CI failure tracking by generating a morning briefing using LangGraph orchestration, pgvector semantic memory, and automated Slack delivery.
 
 🌟 Why this project exists
