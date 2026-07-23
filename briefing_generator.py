@@ -17,31 +17,26 @@ def generate_briefing():
     # Track successful CI runs for PRs
     successful_prs_ci = {r["pr_number"] for r in runs if r["conclusion"] == "success" and r["pr_number"]}
 
-    # 1. Unhandled High-Engagement Issues (NO PR CREATED YET)
-    unhandled_issues = [i for i in issues if not i["has_pr"]]
-    unhandled_issues_sorted = sorted(unhandled_issues, key=lambda x: (x['reactions'] * 2 + x['comments']), reverse=True)
-    top_unhandled_issues = unhandled_issues_sorted[:2]
+    # 1. Top 5 High-Engagement Issues
+    issues_sorted = sorted(issues, key=lambda x: (x['reactions'] * 2 + x['comments']), reverse=True)
+    top_issues = issues_sorted[:5]
 
-    # 2. PRs Ready to Merge (CI PASSED ✔️)
-    ci_passed_prs = [pr for pr in prs if not pr["draft"] and (pr["number"] in successful_prs_ci or pr["solves_issue"] is not None)]
-    top_ci_passed_prs = ci_passed_prs[:2]
-
-    # Deep Investigation for Unhandled Issues (incorporating pgvector memory)
-    unhandled_details = []
-    for issue in top_unhandled_issues:
+    # Deep Investigation for Top 5 Issues (incorporating pgvector memory)
+    issue_details = []
+    for issue in top_issues:
         num = issue["number"]
         title = issue["title"]
-        print(f"Deeply investigating Unhandled Issue #{num}...")
+        print(f"Deeply investigating Issue #{num}...")
 
         # RAG Search: Query pgvector database for similar past issues
         similar_past = retrieve_similar_briefings(title, limit=1)
         past_context = f"Similar past bug found in memory: {similar_past[0][0][:150]}..." if similar_past else "No identical past bug pattern recorded."
 
         investigation_prompt = (
-            f"Investigate unhandled issue #{num} — {title} "
+            f"Investigate issue #{num} — {title} "
             f"({issue['reactions']} upvotes, {issue['comments']} comments). "
             f"Memory Insight: {past_context}. "
-            f"Determine root cause and confirm no PR has been submitted yet."
+            f"Determine root cause and status."
         )
 
         try:
@@ -50,7 +45,7 @@ def generate_briefing():
         except Exception as e:
             investigation_summary = f"Investigation completed: Root cause needs triage."
 
-        unhandled_details.append({
+        issue_details.append({
             "number": num,
             "title": title,
             "upvotes": issue["reactions"],
@@ -60,53 +55,15 @@ def generate_briefing():
             "memory": past_context
         })
 
-    # Deep Investigation for CI-Passed PRs
-    pr_details = []
-    for pr in top_ci_passed_prs:
-        num = pr["number"]
-        title = pr["title"]
-        solves = pr["solves_issue"] or "General Improvement"
-        print(f"Deeply investigating CI-Passed PR #{num}...")
-
-        investigation_prompt = (
-            f"Investigate PR #{num} — {title} by @{pr['author']}. "
-            f"It attempts to solve Issue #{solves}. "
-            f"Determine if the PR changes are safe and ready to be merged."
-        )
-
-        try:
-            res = run_multi_agent_investigation(investigation_prompt)
-            investigation_summary = res["final_answer"]
-        except Exception as e:
-            investigation_summary = f"Investigation completed: PR is ready for final review."
-
-        pr_details.append({
-            "number": num,
-            "title": title,
-            "author": pr["author"],
-            "solves_issue": solves,
-            "investigation": investigation_summary
-        })
-
     # Construct LLM Prompt
     prompt = f"""You are an AI engineering intelligence assistant writing a concise morning briefing for Next.js maintainers.
 
-    DATA:
-
-    1. TOP UNHANDLED ISSUES (NO PR CREATED YET):
+    DATA — TOP 5 HIGH-ENGAGEMENT ISSUES:
     """
-    for item in unhandled_details:
+    for item in issue_details:
         prompt += f"""
         - Issue #{item['number']}: "{item['title']}" (👍 {item['upvotes']} upvotes, 💬 {item['comments']} comments, by @{item['author']})
-          Historical memory match: {item['memory']}
-          AI Deep Investigation: {item['investigation']}
-        """
-
-    prompt += "\n2. PRs READY TO MERGE (CI PASSED ✔️):\n"
-    for item in pr_details:
-        prompt += f"""
-        - PR #{item['number']} by @{item['author']}: "{item['title']}"
-          Solves Issue: #{item['solves_issue']}
+          Historical Memory Pattern: {item['memory']}
           AI Deep Investigation: {item['investigation']}
         """
 
@@ -116,23 +73,20 @@ def generate_briefing():
 
     🌅 *DevPulse Morning Briefing*
 
-    **1. TOP UNHANDLED ISSUES (NO PR CREATED YET)**
+    **TOP 5 HIGH-ENGAGEMENT ISSUES & DEEP INVESTIGATION**
+
     For each issue, format as:
     • ⚠️ **Issue #NUMBER** — *TITLE* (💬 X comments | 👍 Y upvotes | by @AUTHOR)
-      └─ 🔎 **AI Deep Investigation**: [Embed historical memory match + AI investigation directly here]
+      └─ 🔎 **AI Deep Investigation**: [Root cause status & findings]
+      └─ 🧠 **Historical Pattern**: [Historical memory match & recurring pattern findings]
 
-    **2. PRs READY TO MERGE (CI PASSED ✔️)**
-    For each PR, format as:
-    • 🚀 **PR #NUMBER** by @AUTHOR — *TITLE*
-      └─ 🔗 **Solves Issue #SOLVED_ISSUE_NUMBER**
-      └─ 🔎 **AI Deep Investigation**: [Embed AI investigation directly here]
-
-    **3. ACTION ITEMS FOR MANAGER**
-    Provide 3 concrete, numbered action items for the maintainer (e.g. merge specific PR, assign dev to unhandled issue).
+    **ACTION ITEMS FOR MANAGER**
+    Provide 3 concrete, numbered action items for the maintainer based on these top issues.
 
     Rules:
-    - DO NOT create a separate column or section for Deep Investigation; embed it directly under each item!
-    - Under 350 words total.
+    - DO NOT include PR sections or separate investigation sections.
+    - Embed the AI investigation and historical pattern directly under each issue!
+    - Under 400 words total.
     """
 
     print("Generating final briefing with Groq (Llama 3.3)...")
@@ -144,7 +98,7 @@ def generate_briefing():
     )
     briefing = chat_completion.choices[0].message.content
 
-    raw_summary = f"Unhandled: {[i['number'] for i in top_unhandled_issues]} | PRs: {[p['number'] for p in top_ci_passed_prs]}"
+    raw_summary = f"Top Issues: {[i['number'] for i in top_issues]}"
 
     print("Storing briefing in memory...")
     store_briefing(raw_summary, briefing, source_type="briefing")
