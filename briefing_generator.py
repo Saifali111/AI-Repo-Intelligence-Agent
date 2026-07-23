@@ -17,11 +17,11 @@ def generate_briefing():
     # Track successful CI runs for PRs
     successful_prs_ci = {r["pr_number"] for r in runs if r["conclusion"] == "success" and r["pr_number"]}
 
-    # 1. Top 5 High-Engagement Issues
+    # 1. Top 3 High-Engagement Issues
     issues_sorted = sorted(issues, key=lambda x: (x['reactions'] * 2 + x['comments']), reverse=True)
-    top_issues = issues_sorted[:5]
+    top_issues = issues_sorted[:3]
 
-    # Deep Investigation for Top 5 Issues (incorporating pgvector memory)
+    # Deep Investigation for Top 3 Issues (incorporating pgvector memory)
     issue_details = []
     for issue in top_issues:
         num = issue["number"]
@@ -58,7 +58,7 @@ def generate_briefing():
     # Construct LLM Prompt
     prompt = f"""You are an AI engineering intelligence assistant writing a concise morning briefing for Next.js maintainers.
 
-    DATA — TOP 5 HIGH-ENGAGEMENT ISSUES:
+    DATA — TOP 3 HIGH-ENGAGEMENT ISSUES:
     """
     for item in issue_details:
         prompt += f"""
@@ -73,7 +73,7 @@ def generate_briefing():
 
     🌅 *DevPulse Morning Briefing*
 
-    **TOP 5 HIGH-ENGAGEMENT ISSUES & DEEP INVESTIGATION**
+    **TOP 3 HIGH-ENGAGEMENT ISSUES & DEEP INVESTIGATION**
 
     For each issue, format as:
     • ⚠️ **Issue #NUMBER** — *TITLE* (💬 X comments | 👍 Y upvotes | by @AUTHOR)
